@@ -1,0 +1,4 @@
+ipython
+pylint
+
+-r requirements.txt
