@@ -11,14 +11,15 @@ from models.youtube import Download, FindFormatsReponse, DownloadResponse, \
 from services import youtube_format_extractor
 from services import youtube_downloader
 from utils.helper import find_chosed_formats
-from databases.redis import redis_db
+from databases.redis import redis_db as redis
+from enums.regex import Regex
 
 
 youtube_router = APIRouter()
 
 
 @youtube_router.get("/youtube", response_model=FindFormatsReponse)
-def extract_formats(response: Response, url: str = Query(min_length=10, max_length=500)) -> Any:
+def extract_formats(response: Response, url: str = Query(regex=Regex.YOUTUBE.value)) -> Any:
 
     extracted_formats: dict | None = youtube_format_extractor.extract_formats(url=url)
     result = FindFormatsReponse(
@@ -66,34 +67,32 @@ def download_from_youtube(response: Response, download: Download) -> Any:
     }
 
 
-@youtube_router.options("/youtube", response_model=ProgressBarResponse)
+@youtube_router.trace("/youtube", response_model=ProgressBarResponse)
 def show_progress(
         response: Response,
         uuid: str = Query(min_length=16, max_length=64)
 ) -> Any:
 
-    redis = redis_db
-    if redis(db=1).get(name=uuid):
+    if redis.get(name=uuid):
 
-        result = json.loads(redis(db=1).get(name=uuid))
+        result = json.loads(redis.get(name=uuid))
         response.status_code = status.HTTP_200_OK
 
     else:
-        result = ProgressBarResponse(
-            **{
-                "status": None,
-                "total_bytes": 0,
-                "downloaded_bytes": 0,
-                "eta": 0,
-                "speed": 0,
-                "elapsed": 0,
-                "eta_str": "00:00",
-                "speed_str": "0",
-                "total_bytes_str": "0",
-                "elapsed_str": "0",
-                "percent_str": "0"
-            }
-        )
+        result = {
+            "status": None,
+            "total_bytes": 0,
+            "downloaded_bytes": 0,
+            "eta": 0,
+            "speed": 0,
+            "elapsed": 0,
+            "eta_str": "00:00",
+            "speed_str": "0",
+            "total_bytes_str": "0",
+            "elapsed_str": "0",
+            "percent_str": "0",
+            "download_url": None
+        }
         response.status_code = status.HTTP_404_NOT_FOUND
 
-    return result
+    return ProgressBarResponse(**result)

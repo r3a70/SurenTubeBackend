@@ -1,11 +1,9 @@
-from datetime import datetime
+from datetime import timedelta
 from threading import Thread
 from queue import Queue
 from uuid import uuid4
 import json
-
-
-from pymongo.results import InsertOneResult
+import os
 
 
 from yt_dlp import YoutubeDL
@@ -13,7 +11,6 @@ from yt_dlp.utils import DownloadError, ExtractorError
 
 
 from databases.redis import redis_db as redis
-from databases.mongodb import mongo_db as mongodb
 from utils.helper import remove_color_tags
 
 
@@ -41,11 +38,6 @@ def download_from_youtube(
     *, url: str, format_id: str, uuid: str, ext: str = "",
     audio_format_id: str = "", need_audio: bool = False
 ) -> tuple[bool, str]:
-
-    if mongodb.test.find_one({"uuid": uuid}):
-
-        # return False, "uuid is duplicate"
-        pass
 
     name: str = f"{str(uuid4())}"
     queue: Queue = Queue()
@@ -87,14 +79,6 @@ def download_from_youtube(
     t1.start()
 
     status: bool = queue.get()
-    if status:
-
-        _: InsertOneResult = mongodb.test.insert_one(
-            {
-                "uuid": uuid,
-                "create_at": datetime.utcnow()
-            }
-        )
 
     return status, "file will be downloaded as soon as possible"
 
@@ -119,7 +103,8 @@ def progress_bar(d, uuid: str, queue: Queue, name: str) -> None:
                     "speed_str": remove_color_tags(input_str=d['_speed_str']),
                     "total_bytes_str": remove_color_tags(input_str=d['_total_bytes_str']),
                     "elapsed_str": remove_color_tags(input_str=d['_elapsed_str']),
-                    "percent_str": remove_color_tags(input_str=d['_percent_str'])
+                    "percent_str": remove_color_tags(input_str=d['_percent_str']),
+                    "download_url": None
                 }
             )
         )
@@ -139,13 +124,9 @@ def progress_bar(d, uuid: str, queue: Queue, name: str) -> None:
                     "speed_str": remove_color_tags(input_str=d['_speed_str']),
                     "total_bytes_str": remove_color_tags(input_str=d['_total_bytes_str']),
                     "elapsed_str": remove_color_tags(input_str=d['_elapsed_str']),
-                    "percent_str": remove_color_tags(input_str=d['_percent_str'])
+                    "percent_str": remove_color_tags(input_str=d['_percent_str']),
+                    "download_url": f"{os.getenv('STATIC_FILES')}/downloads/{name}"
                 }
             )
         )
-
-        redis.json().set(
-            name=f"upload:{uuid}",
-            path=".",
-            obj={}
-        )
+        redis.expire(name=uuid, time=timedelta(hours=1))

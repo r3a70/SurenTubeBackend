@@ -30,4 +30,4 @@ def find_chosed_formats(
                 _format["format_id"], _format["ext"], _format["need_audio"]
             )
 
-    return None, None
+    return None, None, None

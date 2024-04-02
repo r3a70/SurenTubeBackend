@@ -2,6 +2,7 @@ import os
 
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 
 from dotenv import load_dotenv
@@ -21,5 +22,5 @@ app: FastAPI = FastAPI(
     # debug=True
 )
 
-
+app.mount("/downloads", StaticFiles(directory="./downloads/"), name="downloads")
 app.include_router(youtube_router, prefix=os.getenv("ROOT_PATH"))

@@ -43,10 +43,9 @@ class Download(BaseModel):
 
     url: str
     format_id: str
-    chat_id: int
 
 
-class DownloadExtra(Download):
+class DownloadExtra(BaseModel):
 
     uuid: UUID4
 
@@ -71,3 +70,4 @@ class ProgressBarResponse(BaseModel):
     total_bytes_str: Union[str, None]
     elapsed_str: Union[str, None]
     percent_str: Union[str, None]
+    download_url: Union[str, None]
