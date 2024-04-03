@@ -60,11 +60,12 @@ def download_from_youtube(response: Response, download: Download) -> Any:
         message = "Provided format_id does not exists"
 
     response.status_code = status.HTTP_201_CREATED if success else status.HTTP_400_BAD_REQUEST
-    return {
+    result: dict = {
         "success": success,
         "message": message,
         "result": DownloadExtra(**download.dict(), uuid=uuid) if success else None
     }
+    return DownloadResponse(**result)
 
 
 @youtube_router.trace("/youtube", response_model=ProgressBarResponse)
