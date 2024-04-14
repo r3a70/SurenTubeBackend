@@ -68,7 +68,7 @@ def download_from_youtube(response: Response, download: Download) -> Any:
     return DownloadResponse(**result)
 
 
-@youtube_router.trace("/youtube", response_model=ProgressBarResponse)
+@youtube_router.options("/youtube", response_model=ProgressBarResponse)
 def show_progress(
         response: Response,
         uuid: str = Query(min_length=16, max_length=64)
